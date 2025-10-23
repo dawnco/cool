@@ -33,13 +33,13 @@ func (s *Client) init() {
 // NewClient 初始化
 // 例如  region = ap-southeast-1 参考 https://www.alibabacloud.com/help/zh/oss/user-guide/regions-and-endpoints
 // 是否使用内网  internal
-func NewClient(accessId, accessKey, region, bucket string, internal bool) *Client {
+func NewClient(c Cfg) *Client {
 	client := &Client{
-		accessId:  accessId,
-		accessKey: accessKey,
-		bucket:    bucket,
-		region:    region,
-		internal:  internal,
+		accessId:  c.AccessId,
+		accessKey: c.AccessKey,
+		bucket:    c.Bucket,
+		region:    c.Region,
+		internal:  c.Internal,
 	}
 	client.init()
 	return client
