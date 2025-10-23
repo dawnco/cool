@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/dawnco/cool/env"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -59,10 +60,8 @@ func clientSend(msg, projectName, title string) error {
 		return err
 	}
 
-	fmt.Println(string(reqJson))
-
-	//req, err := http.NewRequest("POST", "http://feishu.message.api.com:8081/feishu/message", bytes.NewReader(reqJson))
-	req, err := http.NewRequest("POST", "http://172.21.67.64:8081/feishu/message", bytes.NewReader(reqJson))
+	feishuHost := env.Get("FEISHU_ALERT_URL", "http://feishu.message.api.com:8081/feishu/message")
+	req, err := http.NewRequest("POST", feishuHost, bytes.NewReader(reqJson))
 	if err != nil {
 		logx.Errorf("发送告警失败 %s : 告警消息 %s",
 			err.Error(),
