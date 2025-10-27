@@ -158,3 +158,39 @@ func (s *Client) Exist(objectName string) (bool, error) {
 	return client.IsObjectExist(context.TODO(), bucketName, objectName)
 
 }
+
+// List 指定列表文件的列表和最后更新时间
+func (s *Client) List(prefix string, limit int) (map[string]int64, error) {
+
+	bucketName := s.bucket
+	client := s.client
+
+	// Create the Paginator for the ListObjectsV2 operation.
+	p := client.NewListObjectsV2Paginator(&oss.ListObjectsV2Request{
+		Bucket: oss.Ptr(bucketName),
+		Prefix: oss.Ptr(prefix),
+	})
+
+	ret := map[string]int64{}
+	// Iterate through the object pages
+	var i int
+	for p.HasNext() {
+		i++
+		page, err := p.NextPage(context.TODO())
+		if err != nil {
+			return nil, fmt.Errorf("failed to get page %v, %v", i, err)
+		}
+
+		// Print the objects found
+		for _, obj := range page.Contents {
+			//fmt.Printf("Object:%v, %v, %v\n", oss.ToString(obj.Key), obj.Size, oss.ToTime(obj.LastModified))
+			ret[oss.ToString(obj.Key)] = obj.LastModified.Unix()
+		}
+		if i >= limit {
+			break
+		}
+	}
+
+	return ret, nil
+
+}
