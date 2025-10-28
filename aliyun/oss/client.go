@@ -82,16 +82,24 @@ func (s *Client) AuthByObjectName(objectName string, bucketName string, expire i
 	return result.URL, nil
 }
 
-// Put 写oss objectName 不能以 / 开头
-func (s *Client) Put(objectName string, content []byte) (string, error) {
+// Put Parameters:
+//
+//	objectName - objectName 不能以 / 开头
+//	content - 数据内容
+//	expire  过期时间  YYYY-MM-DD 格式  不含当天  utc0时区
+func (s *Client) Put(objectName string, content []byte, expire *time.Time) (string, error) {
 
 	client := s.client
 
+	// expire 过期日期
 	request := &oss.PutObjectRequest{
 		Bucket: oss.Ptr(s.bucket),
-		Key:    oss.Ptr(objectName),
+		Key:    oss.Ptr(strings.TrimLeft(objectName, "/")),
 		Body:   bytes.NewReader(content),
-		//Body:   strings.NewReader(content),
+	}
+
+	if expire != nil {
+		request.Expires = oss.Ptr(expire.Format("2006-01-02T15:04:05.000Z"))
 	}
 
 	result, err := client.PutObject(context.TODO(), request)
@@ -159,8 +167,8 @@ func (s *Client) Exist(objectName string) (bool, error) {
 
 }
 
-// List 指定列表文件的列表和最后更新时间
-func (s *Client) List(prefix string, limit int) (map[string]int64, error) {
+// List 指定列表文件的列表
+func (s *Client) List(prefix string, limit int) ([]ObjectItem, error) {
 
 	bucketName := s.bucket
 	client := s.client
@@ -171,7 +179,7 @@ func (s *Client) List(prefix string, limit int) (map[string]int64, error) {
 		Prefix: oss.Ptr(prefix),
 	})
 
-	ret := map[string]int64{}
+	ret := make([]ObjectItem, 10)
 	// Iterate through the object pages
 	var i int
 	for p.HasNext() {
@@ -184,7 +192,11 @@ func (s *Client) List(prefix string, limit int) (map[string]int64, error) {
 		// Print the objects found
 		for _, obj := range page.Contents {
 			//fmt.Printf("Object:%v, %v, %v\n", oss.ToString(obj.Key), obj.Size, oss.ToTime(obj.LastModified))
-			ret[oss.ToString(obj.Key)] = obj.LastModified.Unix()
+			ret = append(ret, ObjectItem{
+				LastUpdate: *obj.LastModified,
+				Key:        *obj.Key,
+				Size:       obj.Size,
+			})
 		}
 		if i >= limit {
 			break
