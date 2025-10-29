@@ -60,8 +60,8 @@ func clientSend(msg, projectName, title string) error {
 		return err
 	}
 
-	feishuHost := env.Get("FEISHU_ALERT_URL", "http://feishu.message.api.com:8081/feishu/message")
-	req, err := http.NewRequest("POST", feishuHost, bytes.NewReader(reqJson))
+	hostAndPort := env.Get("API_ADDR_FEISHU_ALERT", "http://feishu.message.api.com:8081/feishu/message")
+	req, err := http.NewRequest("POST", hostAndPort, bytes.NewReader(reqJson))
 	if err != nil {
 		logx.Errorf("发送告警失败 %s : 告警消息 %s",
 			err.Error(),

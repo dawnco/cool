@@ -9,17 +9,18 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/dawnco/cool/env"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // 全局变量
 var (
-	wApiLogConn       *net.UDPConn
-	wApiLogTargetAddr = "logerror.stat.com:9823"
+	wApiLogConn *net.UDPConn
 )
 
 func init() {
-	addr, err := net.ResolveUDPAddr("udp", wApiLogTargetAddr)
+	hostAndPort := env.Get("API_ADDR_LOG_ERROR", "logerror.stat.com:9823")
+	addr, err := net.ResolveUDPAddr("udp", hostAndPort)
 	if err != nil {
 		panic(fmt.Sprintf("failed to resolve address: %v", err))
 	}

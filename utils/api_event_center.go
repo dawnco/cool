@@ -8,13 +8,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dawnco/cool/env"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
 var (
-	wEventCenterConn       *net.UDPConn
-	wEventCenterOnce       sync.Once
-	wEventCenterTargetAddr = "center.stat.com:9820"
+	wEventCenterConn *net.UDPConn
+	wEventCenterOnce sync.Once
 )
 
 func ApiEc(requestId string, name string, projectName string, params any) int {
@@ -40,7 +40,8 @@ func ApiEventCenter(
 	var initErr error
 
 	wEventCenterOnce.Do(func() {
-		addr, err := net.ResolveUDPAddr("udp", wEventCenterTargetAddr)
+		hostAndPort := env.Get("API_ADDR_EVENT_CENTER", "center.stat.com:9820")
+		addr, err := net.ResolveUDPAddr("udp", hostAndPort)
 		if err != nil {
 			initErr = fmt.Errorf("failed to resolve address: %v", err)
 		}
