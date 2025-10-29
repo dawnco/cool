@@ -1,4 +1,4 @@
-package db
+package mysql
 
 // Cfg 数据库配置
 type Cfg struct {
