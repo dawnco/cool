@@ -7,6 +7,7 @@ import (
 	"net"
 	"runtime"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/dawnco/cool/env"
@@ -15,23 +16,34 @@ import (
 
 // 全局变量
 var (
-	wApiLogConn *net.UDPConn
+	wApiLogConn     *net.UDPConn
+	wApiLogConnOnce sync.Once
 )
-
-func init() {
-	hostAndPort := env.Get("API_ADDR_LOG_ERROR", "logerror.stat.com:9823")
-	addr, err := net.ResolveUDPAddr("udp", hostAndPort)
-	if err != nil {
-		panic(fmt.Sprintf("failed to resolve address: %v", err))
-	}
-	wApiLogConn, err = net.DialUDP("udp", nil, addr)
-	if err != nil {
-		panic(fmt.Sprintf("failed to initialize UDP connection: %v", err))
-	}
-}
 
 // ApiLogError 参数 https://ek8l1y505u.feishu.cn/wiki/OkvrwCLmWiRiBpkiC6dc6yjgn7d
 func ApiLogError(data map[string]any, ProjectName string) {
+
+	// 确保连接只初始化一次
+	var initErr error
+
+	wApiLogConnOnce.Do(func() {
+
+		hostAndPort := env.Get("API_ADDR_LOG_ERROR", "logerror.stat.com:9823")
+		addr, err := net.ResolveUDPAddr("udp", hostAndPort)
+		if err != nil {
+			initErr = fmt.Errorf("failed to resolve address: %v", err)
+		}
+		wApiLogConn, err = net.DialUDP("udp", nil, addr)
+		if err != nil {
+			initErr = fmt.Errorf("failed to initialize UDP connection: %v", err)
+		}
+	})
+
+	// 如果初始化失败，返回错误
+	if initErr != nil {
+		logx.Error(fmt.Sprintf("WApiLogError init error: %s", initErr.Error()))
+		return
+	}
 
 	// "t":         strconv.FormatInt(eTime, 10),
 	//			"date":      time.Now().Format("2006-01-02"),
