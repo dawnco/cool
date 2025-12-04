@@ -23,7 +23,7 @@ type kv struct {
 
 // ApiLog 错误日志
 // t 秒时间戳
-func ApiLog(t int, topic string, store string, data map[string]string) {
+func ApiLog(t int64, topic string, store string, data map[string]string) {
 
 	// 确保连接只初始化一次
 	var initErr error
@@ -47,9 +47,6 @@ func ApiLog(t int, topic string, store string, data map[string]string) {
 		return
 	}
 
-	// "t":         strconv.FormatInt(eTime, 10),
-	//			"date":      time.Now().Format("2006-01-02"),
-
 	row := map[string]any{}
 	row["t"] = t
 	row["topic"] = topic
@@ -69,6 +66,8 @@ func ApiLog(t int, topic string, store string, data map[string]string) {
 		logx.Error(fmt.Sprintf("WApiLogError data error: %s", err.Error()))
 		return
 	}
+
+	fmt.Println("messagemessage", string(message))
 
 	// 初始化一个切片，包含总共 7 个字节
 	prefix := make([]byte, 7)
