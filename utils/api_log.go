@@ -35,7 +35,7 @@ func ApiLog(t int, topic string, store string, data map[string]string) {
 		if err != nil {
 			initErr = fmt.Errorf("failed to resolve address: %v", err)
 		}
-		wApiLogErrorConn, err = net.DialUDP("udp", nil, addr)
+		wApiLogConn, err = net.DialUDP("udp", nil, addr)
 		if err != nil {
 			initErr = fmt.Errorf("failed to initialize UDP connection: %v", err)
 		}
