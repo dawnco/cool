@@ -67,8 +67,6 @@ func ApiLog(t int64, topic string, store string, data map[string]string) {
 		return
 	}
 
-	fmt.Println("messagemessage", string(message))
-
 	// 初始化一个切片，包含总共 7 个字节
 	prefix := make([]byte, 7)
 	// 前两个字节表示整数 61（大端字节序）
