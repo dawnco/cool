@@ -5,30 +5,32 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"runtime"
-	"strconv"
 	"sync"
-	"time"
 
 	"github.com/dawnco/cool/env"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-// 全局变量
 var (
-	wApiLogErrorConn *net.UDPConn
-	wApiLogErrorOnce sync.Once
+	wApiLogConn *net.UDPConn
+	wApiLogOnce sync.Once
 )
 
-// ApiLogError 参数 https://ek8l1y505u.feishu.cn/wiki/OkvrwCLmWiRiBpkiC6dc6yjgn7d
-func ApiLogError(data map[string]any, ProjectName string) {
+type kv struct {
+	Key string `json:"key"`
+	Val string `json:"val"`
+}
+
+// ApiLog 错误日志
+// t 秒时间戳
+func ApiLog(t int, topic string, store string, data map[string]string) {
 
 	// 确保连接只初始化一次
 	var initErr error
 
-	wApiLogErrorOnce.Do(func() {
+	wApiLogOnce.Do(func() {
 
-		hostAndPort := env.Get("API_ADDR_LOG_ERROR", "logerror.stat.com:9823")
+		hostAndPort := env.Get("API_ADDR_LOG", "global.log.stat.com:8844")
 		addr, err := net.ResolveUDPAddr("udp", hostAndPort)
 		if err != nil {
 			initErr = fmt.Errorf("failed to resolve address: %v", err)
@@ -41,38 +43,27 @@ func ApiLogError(data map[string]any, ProjectName string) {
 
 	// 如果初始化失败，返回错误
 	if initErr != nil {
-		logx.Error(fmt.Sprintf("WApiLogError init error: %s", initErr.Error()))
+		logx.Error(fmt.Sprintf("WApiLog init error: %s", initErr.Error()))
 		return
 	}
 
 	// "t":         strconv.FormatInt(eTime, 10),
 	//			"date":      time.Now().Format("2006-01-02"),
 
-	if _, exists := data["t"]; !exists {
-		data["t"] = strconv.FormatInt(time.Now().UnixMilli(), 10)
+	row := map[string]any{}
+	row["t"] = t
+	row["topic"] = topic
+	row["store"] = store
+
+	kvs := []kv{}
+
+	for k, v := range data {
+		kvs = append(kvs, kv{Key: k, Val: fmt.Sprintf("%v", v)})
 	}
 
-	if _, exists := data["service"]; !exists {
-		data["service"] = ProjectName
-	}
+	row["kv"] = kvs
 
-	if _, exists := data["date"]; !exists {
-		data["date"] = time.Now().Format("2006-01-02")
-	}
-
-	if _, exists := data["ip"]; !exists {
-		data["ip"] = GetServerIP()
-	}
-
-	if _, exists := data["file"]; !exists {
-		_, file, line, ok := runtime.Caller(2)
-		if ok {
-			data["file"] = file
-			data["line"] = line
-		}
-	}
-
-	message, err := json.Marshal(data)
+	message, err := json.Marshal(row)
 
 	if err != nil {
 		logx.Error(fmt.Sprintf("WApiLogError data error: %s", err.Error()))
@@ -82,7 +73,7 @@ func ApiLogError(data map[string]any, ProjectName string) {
 	// 初始化一个切片，包含总共 7 个字节
 	prefix := make([]byte, 7)
 	// 前两个字节表示整数 61（大端字节序）
-	binary.BigEndian.PutUint16(prefix[0:2], 61)
+	binary.BigEndian.PutUint16(prefix[0:2], 60)
 	// 第三个字节固定为 0
 	prefix[2] = 0
 	// 第 4 到第 7 个字节表示整数 230（大端字节序） 取了第 4 个字节到第 7 个字节（包括 3，不包括 7），长度正好是 4 个字节。
@@ -90,8 +81,8 @@ func ApiLogError(data map[string]any, ProjectName string) {
 
 	message = append(prefix, message...)
 	// 发送数据
-	_, err = wApiLogErrorConn.Write(message)
+	_, err = wApiLogConn.Write(message)
 	if err != nil {
-		logx.Error(fmt.Sprintf("WApiLogError send error: %s", err.Error()))
+		logx.Error(fmt.Sprintf("wApiLogConn send error: %s", err.Error()))
 	}
 }
