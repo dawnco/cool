@@ -27,10 +27,8 @@ CREATE TABLE `test` (
 
 func TestDb(t *testing.T) {
 
-	var rc, wc *Cfg
-
 	if env.Get("MYSQL_READ_HOST", "") != "" {
-		rc = &Cfg{
+		rc := Cfg{
 			Host:    env.Get("MYSQL_READ_HOST", ""),
 			Port:    env.Get("MYSQL_READ_PORT", 3306),
 			User:    env.Get("MYSQL_READ_USER", "root"),
@@ -39,9 +37,10 @@ func TestDb(t *testing.T) {
 			Zone:    env.Get("MYSQL_READ_ZONE", "+08:00"),
 			Charset: env.Get("MYSQL_READ_CHAR", "utf8mb4"),
 		}
+		Init("read", rc)
 	}
 	if env.Get("MYSQL_WRITE_HOST", "") != "" {
-		wc = &Cfg{
+		wc := Cfg{
 			Host:    env.Get("MYSQL_WRITE_HOST", ""),
 			Port:    env.Get("MYSQL_READ_PORT", 3306),
 			User:    env.Get("MYSQL_WRITE_USER", "root"),
@@ -50,20 +49,10 @@ func TestDb(t *testing.T) {
 			Zone:    env.Get("MYSQL_WRITE_ZONE", "+08:00"),
 			Charset: env.Get("MYSQL_WRITE_CHAR", "utf8mb4"),
 		}
+		Init("write", wc)
 	}
 
-	if env.Get("MYSQL_READ_HOST", "") == "" {
-		t.Errorf("环境变量为空")
-		return
-	}
-	if env.Get("MYSQL_WRITE_HOST", "") == "" {
-		t.Errorf("环境变量为空")
-		return
-	}
-
-	Init(rc, wc)
-
-	db := GetDbWrite()
+	db := GetClient("write")
 
 	type row struct {
 		Name  string  `db:"name"`

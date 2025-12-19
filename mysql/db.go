@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"sync"
 
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
@@ -169,26 +168,6 @@ func (s *Db) Exec(query string, args ...any) (sql.Result, error) {
 	}
 }
 
-var dbWrite *Db
-var dbRead *Db
-
-var onceWrite sync.Once
-var onceRead sync.Once
-
-func GetDbWrite() *Db {
-	onceWrite.Do(func() {
-		dbWrite = &Db{
-			conn: connectionWrite,
-		}
-	})
-	return dbWrite
-}
-
-func GetDbRead() *Db {
-	onceRead.Do(func() {
-		dbRead = &Db{
-			conn: connectionRead,
-		}
-	})
-	return dbRead
+func (s *Db) GetConn() sqlx.SqlConn {
+	return s.conn
 }
