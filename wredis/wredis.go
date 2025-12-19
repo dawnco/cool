@@ -12,7 +12,7 @@ var redisInstance = make(map[string]*redis.Client)
 func Init(cfg []Cfg) {
 	for _, v := range cfg {
 		redisInstance[v.Name] = redis.NewClient(&redis.Options{
-			Addr:     v.Addr,
+			Addr:     fmt.Sprintf("%s:%d", v.Host, v.Port),
 			Password: v.Password,
 			DB:       v.Db,
 		})
