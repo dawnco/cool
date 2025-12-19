@@ -2,6 +2,7 @@ package wredis
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
