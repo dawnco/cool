@@ -13,7 +13,43 @@ type Db struct {
 	conn sqlx.SqlConn
 }
 
+func (s *Db) isMap(data any) bool {
+	_, ok := data.(map[string]any)
+	return ok
+}
+
 func (s *Db) Insert(tableName string, data any) (sql.Result, error) {
+
+	if s.isMap(data) {
+		return s.insertMap(tableName, data.(map[string]any))
+	} else {
+		return s.insertStruct(tableName, data)
+	}
+
+}
+
+func (s *Db) insertMap(tableName string, data map[string]any) (sql.Result, error) {
+
+	// 构造插入语句
+	var columns []string
+	var placeholders []string
+	var values []any
+
+	for key, value := range data {
+		columns = append(columns, key)
+		placeholders = append(placeholders, "?")
+		values = append(values, value)
+	}
+
+	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)",
+		tableName,
+		strings.Join(columns, ","),
+		strings.Join(placeholders, ","))
+
+	return s.Exec(query, values...)
+}
+
+func (s *Db) insertStruct(tableName string, data any) (sql.Result, error) {
 
 	typeOf := reflect.TypeOf(data)
 	valueOf := reflect.ValueOf(data)
@@ -67,6 +103,16 @@ func (s *Db) InsertAndGetId(tableName string, data any) (int64, error) {
 }
 
 func (s *Db) Update(tableName string, data any, conditions map[string]any) (int64, error) {
+
+	if s.isMap(data) {
+		return s.updateMap(tableName, data.(map[string]any), conditions)
+	} else {
+		return s.updateStruct(tableName, data, conditions)
+	}
+
+}
+
+func (s *Db) updateStruct(tableName string, data any, conditions map[string]any) (int64, error) {
 
 	typeOf := reflect.TypeOf(data)
 	valueOf := reflect.ValueOf(data)
@@ -122,6 +168,37 @@ func (s *Db) Update(tableName string, data any, conditions map[string]any) (int6
 
 	return result.RowsAffected()
 
+}
+
+func (s *Db) updateMap(tableName string, data map[string]any, conditions map[string]any) (int64, error) {
+	var setClauses []string
+	var whereClauses []string
+	var args []any
+
+	// 构建 SET 子句
+	for key, value := range data {
+		setClauses = append(setClauses, fmt.Sprintf("%s = ?", key))
+		args = append(args, value)
+	}
+	setClause := strings.Join(setClauses, ", ")
+
+	// 构建 WHERE 子句
+	for key, value := range conditions {
+		whereClauses = append(whereClauses, fmt.Sprintf("%s = ?", key))
+		args = append(args, value)
+	}
+	whereClause := strings.Join(whereClauses, " AND ")
+
+	// 构建 SQL 语句
+	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s", tableName, setClause, whereClause)
+
+	result, err := s.conn.Exec(query, args...)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return result.RowsAffected()
 }
 
 func (s *Db) Delete(tableName string, conditions map[string]any) (int64, error) {
