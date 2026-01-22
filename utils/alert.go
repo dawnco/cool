@@ -16,14 +16,17 @@ var lastAlertTime time.Time
 
 // AlertMessage 发送消息到飞书
 func AlertMessage(msg string, projectName string) {
-	go clientSend(msg, "Notice", projectName)
+	go clientSend(msg, "Notice", projectName, "w")
 }
 
 func AlertMessageAndTitle(msg, projectName string, title string) {
-	go clientSend(msg, projectName, title)
+	go clientSend(msg, projectName, title, "w")
+}
+func AlertSuccessMessageAndTitle(msg, projectName string, title string) {
+	go clientSend(msg, projectName, title, "r")
 }
 
-func clientSend(msg, projectName, title string) error {
+func clientSend(msg, projectName, title string, wr string) error {
 
 	tn := time.Now()
 
@@ -41,8 +44,8 @@ func clientSend(msg, projectName, title string) error {
 		"summary":  msg,           // 消息内容
 		"receive":  "cqkaifa",     // 发送给谁 那个群多个用逗号分开
 		"at":       "",            // at谁 多个逗号分割
-		"ip":       GetServerIP(), // 警告或者恢复   默认告警
-		"wr":       "w",           // 发生的ip
+		"ip":       GetServerIP(), // 发生的ip
+		"wr":       wr,            // 警告或者恢复   默认告警 w/r
 		"service":  projectName,   // 发生的服务
 		"datetime": n,             // 发生时间 格式 2024-01-22 23:20:10
 		"debug":    "",            // 调试信息
