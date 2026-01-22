@@ -28,6 +28,40 @@ func (s *Db) Insert(tableName string, data any) (sql.Result, error) {
 
 }
 
+// 批量插入
+func (s *Db) InsertBatch(tableName string, data []map[string]any) (sql.Result, error) {
+	if len(data) == 0 {
+		return nil, fmt.Errorf("no data provided for batch insert")
+	}
+
+	// 获取列名 - 使用第一个数据项的键作为列名
+	var columns []string
+	for key := range data[0] {
+		columns = append(columns, key)
+	}
+
+	// 构造占位符 - 每个数据项都需要一组占位符
+	var placeholders []string
+	var values []any
+
+	for _, row := range data {
+		var rowPlaceholders []string
+		// 按照第一行定义的列顺序添加值
+		for _, column := range columns {
+			rowPlaceholders = append(rowPlaceholders, "?")
+			values = append(values, row[column])
+		}
+		placeholders = append(placeholders, fmt.Sprintf("(%s)", strings.Join(rowPlaceholders, ",")))
+	}
+
+	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s",
+		tableName,
+		strings.Join(columns, ","),
+		strings.Join(placeholders, ","))
+
+	return s.Exec(query, values...)
+}
+
 func (s *Db) insertMap(tableName string, data map[string]any) (sql.Result, error) {
 
 	// 构造插入语句
