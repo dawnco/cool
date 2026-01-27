@@ -14,10 +14,12 @@ import (
 
 var lastAlertTime time.Time
 
-var alertGroupName = ""
+var feishuAlertGroupName = ""
+var feishuHostAndPort = ""
 
 func init() {
-	alertGroupName = env.Get("ALERT_GROUP_NAME", "cqkaifa")
+	feishuAlertGroupName = env.Get("API_ALERT_GROUP_NAME", "cqkaifa")
+	feishuHostAndPort = env.Get("API_ADDR_FEISHU_ALERT", "http://feishu.message.api.com:8081/feishu/message")
 }
 
 // AlertMessage 发送消息到飞书
@@ -45,18 +47,18 @@ func clientSend(msg, projectName, title string, wr string) error {
 	// 创建一个 map 并为每个键赋值
 	n := time.Now().Format("2006-01-02 15:04:05")
 	data := map[string]any{
-		"key":      "",             // 消息key 用于区别消息类型和推送
-		"title":    title,          // 消息内容
-		"summary":  msg,            // 消息内容
-		"receive":  alertGroupName, // 发送给谁 那个群多个用逗号分开
-		"at":       "",             // at谁 多个逗号分割
-		"ip":       GetServerIP(),  // 发生的ip
-		"wr":       wr,             // 警告或者恢复   默认告警 w/r
-		"service":  projectName,    // 发生的服务
-		"datetime": n,              // 发生时间 格式 2024-01-22 23:20:10
-		"debug":    "",             // 调试信息
-		"HideExt":  0,              // 隐藏调试信息
-		"MsgId":    "",             // 编辑消息的消息ID
+		"key":      "",                   // 消息key 用于区别消息类型和推送
+		"title":    title,                // 消息内容
+		"summary":  msg,                  // 消息内容
+		"receive":  feishuAlertGroupName, // 发送给谁 那个群多个用逗号分开
+		"at":       "",                   // at谁 多个逗号分割
+		"ip":       GetServerIP(),        // 发生的ip
+		"wr":       wr,                   // 警告或者恢复   默认告警 w/r
+		"service":  projectName,          // 发生的服务
+		"datetime": n,                    // 发生时间 格式 2024-01-22 23:20:10
+		"debug":    "",                   // 调试信息
+		"HideExt":  0,                    // 隐藏调试信息
+		"MsgId":    "",                   // 编辑消息的消息ID
 	}
 
 	// 将 map 转换为 JSON 格式
@@ -69,8 +71,7 @@ func clientSend(msg, projectName, title string, wr string) error {
 		return err
 	}
 
-	hostAndPort := env.Get("API_ADDR_FEISHU_ALERT", "http://feishu.message.api.com:8081/feishu/message")
-	req, err := http.NewRequest("POST", hostAndPort, bytes.NewReader(reqJson))
+	req, err := http.NewRequest("POST", feishuHostAndPort, bytes.NewReader(reqJson))
 	if err != nil {
 		logx.Errorf("发送告警失败 %s : 告警消息 %s",
 			err.Error(),
