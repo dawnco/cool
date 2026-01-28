@@ -57,6 +57,11 @@ func ApiEventCenter(
 		return 0
 	}
 
+	if wEventCenterConn == nil {
+		logx.Error("WEventCenter conn is nil")
+		return 0
+	}
+
 	data := map[string]any{
 		"name":      name,
 		"_topic_":   topic,

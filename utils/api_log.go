@@ -47,6 +47,11 @@ func ApiLog(t int64, topic string, store string, data map[string]string) {
 		return
 	}
 
+	if wApiLogConn == nil {
+		logx.Error("WApiLog conn is nil")
+		return
+	}
+
 	row := map[string]any{}
 	row["t"] = t
 	row["topic"] = topic
