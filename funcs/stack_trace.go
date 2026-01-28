@@ -19,6 +19,7 @@ func isSkipFrame(file string) bool {
 		"/middleware/panic.go",
 		"_test.go",
 		"/testing/",
+		"/github.com/zeromicro/",
 		// 可根据项目结构调整，例如：
 		// "/vendor/",
 	}
